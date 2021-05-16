@@ -1,16 +1,27 @@
-import React, { useEffect, useState } from "react"
-import { TextStyle, View, ViewStyle } from "react-native"
+import React, { useState } from "react"
+import {
+  TextStyle,
+  View,
+  ViewStyle,
+  TouchableOpacity,
+  LayoutAnimation,
+  Text,
+  UIManager,
+  Platform,
+} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { observer } from "mobx-react-lite"
 import { Header, Screen, Wallpaper } from "../../components"
 import { color, spacing } from "../../theme"
-// import useSocket from "./useSocket"
-import Coin from "./Coin"
 
-const FULL: ViewStyle = { flex: 1 }
+import CoinFPS from "./CoinFPS"
+import RightMenu from "./RightMenu"
+
+const FULL: ViewStyle = { flex: 1, height: "100%" }
 const CONTAINER: ViewStyle = {
   backgroundColor: color.transparent,
   paddingHorizontal: spacing[4],
+  height: "100%",
 }
 
 const BOLD: TextStyle = { fontWeight: "bold" }
@@ -28,56 +39,38 @@ const HEADER_TITLE: TextStyle = {
   letterSpacing: 1.5,
 }
 
-let temp = ""
+const BUTTON: ViewStyle = {
+  height: 38,
+  backgroundColor: "#3f51b5",
+  borderRadius: 5,
+  marginBottom: 15,
+  justifyContent: "center",
+  marginHorizontal: 10,
+}
+
+const BUTTON_TITILE: TextStyle = {
+  color: "#fff",
+  textAlign: "center",
+}
+
+const ROOT: ViewStyle = {
+  flexDirection: "row",
+}
+
+const RIGHT_SIDE: ViewStyle = {
+  flex: 1,
+}
+
+if (Platform.OS === "android") {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true)
+  }
+}
 
 export const DemoScreen = observer(function DemoScreen() {
   const navigation = useNavigation()
   const goBack = () => navigation.goBack()
-  const [dataBtc, setData] = useState("")
-  let inteval = null
-
-  const ws = new WebSocket("wss://ws-feed.pro.coinbase.com")
-
-  useEffect(() => {
-    ws.onopen = () => {
-      // connection opened
-      ws.send(
-        JSON.stringify({
-          type: "subscribe",
-          channels: [{ name: "level2", product_ids: ["BTC-USDT"] }],
-        }),
-      ) // send a message
-    }
-
-    ws.onmessage = (e) => {
-      temp = e.data
-    }
-
-    ws.onerror = (e) => {
-      // an error occurred
-      console.log("e--", e.message)
-    }
-
-    ws.onclose = (e) => {
-      // connection closed
-      console.log("close---", e.code, e.reason)
-    }
-
-    setReload()
-
-    return () => {
-      ws.close()
-      clearInterval(inteval)
-    }
-  }, [])
-
-  function setReload() {
-    inteval = setInterval(() => {
-      if (temp) {
-        setData(temp)
-      }
-    }, 50)
-  }
+  const [expanded, setExpanded] = useState(false)
 
   return (
     <View testID="DemoScreen" style={FULL}>
@@ -90,8 +83,22 @@ export const DemoScreen = observer(function DemoScreen() {
           style={HEADER}
           titleStyle={HEADER_TITLE}
         />
+        <TouchableOpacity
+          style={BUTTON}
+          onPress={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
+            setExpanded(!expanded)
+          }}
+        >
+          <Text style={BUTTON_TITILE}>Transition layout</Text>
+        </TouchableOpacity>
+        <View style={ROOT}>
+          <View style={RIGHT_SIDE}>
+            <CoinFPS />
+          </View>
 
-        <Coin data={dataBtc} />
+          {expanded && <RightMenu />}
+        </View>
       </Screen>
     </View>
   )
